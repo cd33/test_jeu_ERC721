@@ -75,3 +75,82 @@ export const StyledClickable = styled.div`
     opacity: 0.6;
   }
 `;
+
+export const Navbar = styled.div`
+  min-height: 3em;
+  width: 100%;
+  background-color: black;
+  color: white;
+`;
+
+export const NavbarText = styled.div`
+  position: relative;
+  float: ${({ float }) => float ? float : "left"};
+  margin: ${({ margin }) => margin ? `${margin}px` : "none"}
+`;
+
+export const ModalBackground = styled.div`
+	z-index: auto;
+	display: ${({ show }) => (show ? 'flex' : 'none')};
+	position: fixed;
+	top: 0;
+	left: 0;
+	height: 100vh;
+	width:100vw;
+	background: rgba(0,0,0,0.5);
+  justify-content: center;
+  align-items: center;
+`;
+
+export const ModalContainer = styled.div`
+  background: antiquewhite;
+  width: 30%;
+  height: auto;
+  min-height: 30%;
+  border-radius: 10px;
+  padding: 0.75rem;
+  color: rgba(0,0,139, 0.7);
+  text-align: center;
+  text-align-vertical: center;
+`;
+
+export const up = styled.div`
+  border: 2px solid black;
+  transform: rotate(-45deg);
+  position: relative;
+  top: 14px;
+  right: 6px;
+  width: 40px;
+  background-color: black;
+  border-radius: 25px;
+`;
+
+export const down = styled.div`
+  border: 2px solid black;
+  transform: rotate(45deg);
+  position: relative;
+  top: 10px;
+  right: 6px;
+  width: 40px;
+  background-color: black;
+  border-radius: 25px;
+`;
+
+export const Button = styled.button`
+  background: ${props => props.primary ? "black" : "white"};
+  color: ${props => props.primary ? "white" : "black"};
+  font-size: 1em;
+  margin: 1em;
+  padding: 0.25em 1em;
+  border: 2px solid white;
+  border-radius: 3px;
+`;
+
+export const Input = styled.input`
+  padding: 0.5em;
+  margin: 0.5em;
+  color: ${props => props.inputColor || "black"};
+  background: papayawhip;
+  border: none;
+  border-radius: 3px;
+`;

@@ -2,22 +2,26 @@ import React, { useState, useEffect } from "react";
 import NFTGameToken from "./contracts/NFTGameToken.json";
 import getWeb3 from "./getWeb3";
 import * as s from "./globalStyles";
+import Navbar from "./components/Navbar";
 
 const App = () => {
 
   const [web3, setWeb3] = useState(null);
   const [accounts, setAccounts] = useState(null);
+  const [owner, setOwner] = useState(null);
   const [nftgContract, setNftgContract] = useState(null);
   const [characters, setCharacters] = useState(null);
   const [typeCharacter, setTypeCharacter] = useState(0);
-  const [myCharacters, setMyCharacters] = useState(null);
-  const [allCharacters, setAllCharacters] = useState(null);
+  const [loading, setLoading] = useState(false);
+  // const [myCharacters, setMyCharacters] = useState(null);
+  const [othersCharacters, setOthersCharacters] = useState(null);
 
   useEffect(() => {
     const init = async () => {
       try {
         // Get network provider and web3 instance.
         const web3 = await getWeb3();
+        web3.eth.handleRevert = true;
 
         // Use web3 to get the user's accounts.
         const accounts = await web3.eth.getAccounts();
@@ -41,9 +45,10 @@ const App = () => {
         const nftgNetwork = NFTGameToken.networks[networkId];
         const nftgContract = new web3.eth.Contract(NFTGameToken.abi, nftgNetwork && nftgNetwork.address);
         setNftgContract(nftgContract);
-        let myCharacters = await nftgContract.methods.getMyCharacters().call({ from: accounts[0] });
-        setCharacters(myCharacters)
-        // setCharacters(myCharacters);
+        await nftgContract.methods.getMyCharacters().call({ from: accounts[0] }).then(res => setCharacters(res));
+        await nftgContract.methods.getOthersCharacters().call({ from: accounts[0] }).then(res => setOthersCharacters(res));
+
+        setOwner(accounts[0] === await nftgContract.methods.owner().call());
 
         // Subscribe to the contract states to update the front states
         web3.eth.subscribe('newBlockHeaders', async (err, res) => {
@@ -67,44 +72,57 @@ const App = () => {
     init();
   }, []);
 
+  // EVENTS
   // useEffect(() => {
-  //   if (web3 && contract && accounts) {
-      
+  //   if (bibscoin !== null && web3 !== null) {
+  //     bibscoin.events.Transfer({fromBlock: 0})
+  //     .on('data', event => handleModal("Transaction Approuved", `${web3.utils.fromWei((event.returnValues.value).toString(), 'Ether')} DAI transfered`))
+  //     .on('error', err => alert("Error", err.message))
   //   }
-  // }, [web3, contract, accounts])
+  // }, [bibscoin, web3])
 
-  // console.log(web3)
-  // console.log(contract)
-  // console.log(accounts)
-
-  const createCharacter = async () => {
-    await nftgContract.methods.createCharacter(typeCharacter)
-    .send({ from: accounts[0], value: "1000000000000000" })
-    // .once(err => console.log(err))
-    // .then(receipt => console.log(receipt))
+  const createCharacter = () => {
+    setLoading(true);
+    nftgContract.methods.createCharacter(typeCharacter)
+    .send({ from: accounts[0], value: web3.utils.toWei("1", 'Ether') })
+    .once("error", err => {
+      setLoading(false);
+      console.log(err);
+    })
+    .then(receipt => {
+      setLoading(false);
+      console.log(receipt);
+    })
   }
 
-  const getMyCharacters = async () => {
-    try {
-      const result = await nftgContract.methods.getMyCharacters().call({ from: accounts[0] });
-      setMyCharacters(result);
-    } catch(error) {
-      console.log(error.message)
-    }
+  const withdraw = () => {
+    setLoading(true);
+    nftgContract.methods.withdraw().send({ from: accounts[0] })
+    .then(res => {
+      setLoading(false);
+      console.log(res);
+    })
   }
 
-  console.log("myCharacters", myCharacters)
-
-  const getAllCharacters = async () => {
-    try {
-      const result = await nftgContract.methods.getAllCharacters().call();
-      setAllCharacters(result);
-    } catch(error) {
-      console.log(error.message)
-    }
+  const fight = (_myTokenId, _rivalTokenId) => {
+    setLoading(true);
+    nftgContract.methods.fight(_myTokenId, _rivalTokenId)
+    .send({ from: accounts[0], value: web3.utils.toWei("0.001", 'Ether') })
+    .then(res => {
+      setLoading(false);
+      console.log(res);
+    })
   }
 
-  console.log("allCharacters", allCharacters)
+  const heal = (_myTokenId) => {
+    setLoading(true);
+    nftgContract.methods.heal(_myTokenId)
+    .send({ from: accounts[0], value: web3.utils.toWei("0.001", 'Ether') })
+    .then(res => {
+      setLoading(false);
+      console.log(res);
+    })
+  }
 
   const typeCharacterName = (val) => {
     if (parseInt(val) === 0) {
@@ -120,62 +138,102 @@ const App = () => {
     <s.Screen>
       <s.Container ai="center" style={{flex: 1, backgroundColor: '#DBAD6A'}}>
         {!web3 ? 
-          <div><s.TextTitle>Loading Web3, accounts, and contract...</s.TextTitle></div>
-        :
-        <>
-        { accounts && <div style={{position: "absolute", right: 10, top: 0}}>{accounts[0]}</div> }
+          <s.TextTitle>Loading Web3, accounts, and contract...</s.TextTitle>
+        : <>
+        <Navbar accounts={accounts} />
 
         <s.TextTitle>Début projet final Alyra</s.TextTitle>
-
-        <s.TextDescription>Veuillez choisir un type de personnage</s.TextDescription>
+        <s.TextSubTitle>Veuillez choisir un type de personnage</s.TextSubTitle>
         <s.SpacerSmall />
+
         <select onChange={e => setTypeCharacter(e.target.value)}>
           <option value="0">BERSERKER</option>
           <option value="1">SPIRITUAL</option>
           <option value="2">ELEMENTARY</option>
         </select>
-        <s.SpacerSmall />
-        <button onClick={(e) => {
-          e.preventDefault();
-          createCharacter();
-        }}>CREATE CHARACTER</button>
-        <s.SpacerSmall />
-        <button onClick={(e) => {
-          e.preventDefault();
-          getMyCharacters();
-        }}>TEST MY CHARACTER</button>
-        <s.SpacerSmall />
-        <button onClick={(e) => {
-          e.preventDefault();
-          getAllCharacters();
-        }}>TEST ALL CHARACTER</button>
+
+        <s.Button 
+          disabled={loading ? 1 : 0} 
+          onClick={() => createCharacter()} 
+          primary={loading ? "" : "primary"} 
+        >
+          CREATE CHARACTER
+        </s.Button>
+        
+        <s.TextTitle style={{margin: 0}}>Mes Persos</s.TextTitle>
 
         {!characters && <s.TextSubTitle>Créez votre premier NFT</s.TextSubTitle>}
 
-        <s.SpacerMedium />
-
         <s.Container fd="row" style={{flexWrap:"wrap"}}>
           {characters && characters.length > 0 &&
-            characters.map(Character => {
+            characters.map(character => {
               return (
-                <><s.Container key={Character.id} style={{minWidth: "130px"}}>
-                  {/* <s.TextDescription>ID: {Character.id}</s.TextDescription> */}
-                  {/* <s.TextDescription>DNA: {Character.dna}</s.TextDescription> */}
-                  <s.TextDescription>XP: {Character.xp}</s.TextDescription>
-                  <s.TextDescription>HP: {Character.hp}</s.TextDescription>
-                  <s.TextDescription>Attack: {Character.attack}</s.TextDescription>
-                  <s.TextDescription>Armor: {Character.armor}</s.TextDescription>
-                  <s.TextDescription>Mana: {Character.mana}</s.TextDescription>
-                  <s.TextDescription>Magic Resistance: {Character.magicResistance}</s.TextDescription>
-                  <s.TextDescription>Type: {typeCharacterName(Character.typeCharacter)}</s.TextDescription>
+                <><s.Container key={character.id} style={{minWidth: "130px"}}>
+                  <s.TextDescription>ID: {character.id}</s.TextDescription>
+                  {/* <s.TextDescription>DNA: {character.dna}</s.TextDescription> */}
+                  <s.TextDescription>XP: {character.xp}</s.TextDescription>
+                  <s.TextDescription>HP: {character.hp}</s.TextDescription>
+                  <s.TextDescription>Attack: {character.attack}</s.TextDescription>
+                  <s.TextDescription>Armor: {character.armor}</s.TextDescription>
+                  <s.TextDescription>Mana: {character.mana}</s.TextDescription>
+                  <s.TextDescription>Magic Resistance: {character.magicResistance}</s.TextDescription>
+                  <s.TextDescription>Type: {typeCharacterName(character.typeCharacter)}</s.TextDescription>
+                  { character.xp < 100 && 
+                    <s.Button 
+                      disabled={loading ? 1 : 0} 
+                      onClick={() => heal(character.id)} 
+                      primary={loading ? "" : "primary"} 
+                    >
+                      HEAL
+                    </s.Button>
+                  }
                 </s.Container>
                 <s.SpacerSmall /></>
               )
             })
           }
-          
+        </s.Container>
+
+        <s.SpacerLarge />
+        <s.TextTitle style={{margin: 0}}>Mes Ennemis</s.TextTitle>
+
+        <s.Container fd="row" style={{flexWrap:"wrap"}}>
+          {othersCharacters && othersCharacters.length > 0 &&
+            othersCharacters.map(character => {
+              return (
+                <><s.Container key={character.dna} style={{minWidth: "130px"}}>
+                  <s.TextDescription>ID: {character.id}</s.TextDescription>
+                  {/* <s.TextDescription>DNA: {character.dna}</s.TextDescription> */}
+                  <s.TextDescription>XP: {character.xp}</s.TextDescription>
+                  <s.TextDescription>HP: {character.hp}</s.TextDescription>
+                  <s.TextDescription>Attack: {character.attack}</s.TextDescription>
+                  <s.TextDescription>Armor: {character.armor}</s.TextDescription>
+                  <s.TextDescription>Mana: {character.mana}</s.TextDescription>
+                  <s.TextDescription>Magic Resistance: {character.magicResistance}</s.TextDescription>
+                  <s.TextDescription>Type: {typeCharacterName(character.typeCharacter)}</s.TextDescription>
+                  <s.Button 
+                    disabled={loading ? 1 : 0} 
+                    onClick={() => fight(1, character.id)} 
+                    primary={loading ? "" : "primary"} 
+                  >
+                    FIGHT
+                  </s.Button>
+                </s.Container>
+                <s.SpacerSmall /></>
+              )
+            })
+          }
         </s.Container>
         </>}
+        { owner && 
+          <s.Button 
+            disabled={loading ? 1 : 0} 
+            onClick={() => withdraw()} 
+            primary={loading ? "" : "primary"} 
+          >
+            WITHDRAW
+          </s.Button>
+        }
       </s.Container>
     </s.Screen>
   )

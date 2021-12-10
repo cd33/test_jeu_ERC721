@@ -10,12 +10,12 @@ contract NFTGameToken is ERC721, Ownable {
 
     enum type_character { BERSERKER, SPIRITUAL, ELEMENTARY }
     uint256 nextId = 0;
-    uint256 mintFee = 0.001 ether;
+    uint256 mintFee = 1 ether;
     uint256 healFee = 0.001 ether;
     uint256 fightFee = 0.001 ether;
 
     struct Character {
-        // uint256 id;
+        uint256 id;
         uint256 dna;
         // uint8 level;
         uint256 xp;
@@ -31,23 +31,44 @@ contract NFTGameToken is ERC721, Ownable {
     mapping(uint256 => Character) private _characterDetails;
 
     // events
+    event CharacterCreated(uint256 dna);
+    event Healed(uint tokenId);
+    event Fighted(uint myTokenId, uint rivalTokenId);
+
+    // Helper
+    function _generateRandomNum(uint256 _mod) internal view returns(uint256) {
+        uint256 randNum = uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender)));
+        return randNum % _mod;
+    }
+    
+    function updateFees(uint256 _mintFee, uint256 _healFee, uint256 _fightFee) external onlyOwner() {
+        mintFee = _mintFee;
+        healFee = _healFee;
+        fightFee = _fightFee;
+    }
+    
+    function withdraw() external onlyOwner() {
+        payable(owner()).transfer(address(this).balance);
+    }
 
     function createCharacter(type_character _typeCharacter) external payable {
         require(msg.value == mintFee, "Wrong amount of fees");
         require(balanceOf(msg.sender) < 5, "You can't have more than 5 NFT");
         require(_typeCharacter == type_character.BERSERKER || _typeCharacter == type_character.SPIRITUAL || _typeCharacter == type_character.ELEMENTARY,
         "You must choose between berserker, spiritual or elementary");
+        uint256 dna = _generateRandomNum(10**16);
         if (_typeCharacter == type_character.BERSERKER) {
-            _characterDetails[nextId] = Character(5485694854154984, 1, 100, 5, 3, 1, 1, type_character.BERSERKER);
+            _characterDetails[nextId] = Character(nextId, dna, 1, 100, 5, 3, 1, 1, type_character.BERSERKER);
         }
         if (_typeCharacter == type_character.SPIRITUAL) {
-            _characterDetails[nextId] = Character(6471324854154984, 1, 100, 1, 1, 5, 3, type_character.SPIRITUAL);
+            _characterDetails[nextId] = Character(nextId, dna, 1, 100, 1, 1, 5, 3, type_character.SPIRITUAL);
         }
         if (_typeCharacter == type_character.ELEMENTARY) {
-            _characterDetails[nextId] = Character(1234694854154984, 1, 100, 2, 2, 3, 3, type_character.ELEMENTARY);
+            _characterDetails[nextId] = Character(nextId, dna, 1, 100, 2, 2, 3, 3, type_character.ELEMENTARY);
         }
         _safeMint(msg.sender, nextId);
         nextId++;
+        emit CharacterCreated(dna);
     }
 
     function heal(uint _tokenId) external payable {
@@ -60,6 +81,7 @@ contract NFTGameToken is ERC721, Ownable {
         } else {
             _characterDetails[_tokenId].hp += 50;
         }
+        emit Healed(_tokenId);
     }
 
     function fight(uint _myTokenId, uint _rivalTokenId) external payable {
@@ -93,6 +115,7 @@ contract NFTGameToken is ERC721, Ownable {
                 }
             }
         }
+        emit Fighted(_myTokenId, _rivalTokenId);
     }
 
     // Getters
@@ -110,6 +133,18 @@ contract NFTGameToken is ERC721, Ownable {
             }
         }
         return myCharacters;
+    }
+
+    function getOthersCharacters() public view returns (Character[] memory){
+        uint8 count = 0;
+        Character[] memory othersCharacters = new Character[](nextId - balanceOf(msg.sender));
+        for (uint i = 0; i < nextId; i++) {
+            if (ownerOf(i) != msg.sender) {
+                othersCharacters[count] = _characterDetails[i];
+                count++;
+            }
+        }
+        return othersCharacters;
     }
     
     // only for TESTS getAllCharacters
