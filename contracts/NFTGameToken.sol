@@ -3,10 +3,13 @@ pragma solidity 0.8.10;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract NFTGameToken is ERC721, Ownable {
 
     constructor() ERC721("NFTGameToken", "NFTG") {}
+
+    using SafeMath for uint256;
 
     enum type_character { BERSERKER, SPIRITUAL, ELEMENTARY }
     uint256 nextId = 0;
@@ -31,9 +34,9 @@ contract NFTGameToken is ERC721, Ownable {
     mapping(uint256 => Character) private _characterDetails;
 
     // events
-    event CharacterCreated(uint256 dna);
-    event Healed(uint tokenId);
-    event Fighted(uint myTokenId, uint rivalTokenId);
+    event CharacterCreated(uint256 id);
+    event Healed(uint256 tokenId);
+    event Fighted(uint256 myTokenId, uint256 rivalTokenId, uint256 substrateLifeToRival, uint256 substrateLifeToMe);
 
     // Helper
     function _generateRandomNum(uint256 _mod) internal view returns(uint256) {
@@ -49,6 +52,16 @@ contract NFTGameToken is ERC721, Ownable {
     
     function withdraw() external onlyOwner() {
         payable(owner()).transfer(address(this).balance);
+    }
+    
+    function substrateLife(uint256 id1, uint256 id2) internal view returns(uint256) {
+        uint256 op1 = uint256(_characterDetails[id1].attack).mul(_characterDetails[id1].xp);
+        uint256 op2 = (uint256(_characterDetails[id2].armor).mul(_characterDetails[id2].xp)).div(2);
+        if (op1 < op2) {
+            return 0;
+        } else {
+            return op1.sub(op2);
+        }
     }
 
     function createCharacter(type_character _typeCharacter) external payable {
@@ -67,11 +80,11 @@ contract NFTGameToken is ERC721, Ownable {
             _characterDetails[nextId] = Character(nextId, dna, 1, 100, 2, 2, 3, 3, type_character.ELEMENTARY);
         }
         _safeMint(msg.sender, nextId);
+        emit CharacterCreated(nextId);
         nextId++;
-        emit CharacterCreated(dna);
     }
 
-    function heal(uint _tokenId) external payable {
+    function heal(uint256 _tokenId) external payable {
         require(msg.value == healFee, "Wrong amount of fees");
         require(ownerOf(_tokenId) == msg.sender, "You're not the owner of the NFT");
         require(_characterDetails[_tokenId].hp > 0, "You're NFT is dead");
@@ -84,16 +97,14 @@ contract NFTGameToken is ERC721, Ownable {
         emit Healed(_tokenId);
     }
 
-    function fight(uint _myTokenId, uint _rivalTokenId) external payable {
+    function fight(uint256 _myTokenId, uint256 _rivalTokenId) external payable {
         require(msg.value == fightFee, "Wrong amount of fees");
         require(ownerOf(_myTokenId) == msg.sender, "You're not the owner of the NFT");
         require(ownerOf(_myTokenId) != ownerOf(_rivalTokenId), "Your NFTs cannot fight each other");
         require(_characterDetails[_myTokenId].hp > 0 && _characterDetails[_rivalTokenId].hp > 0, "One of the NFTs is dead");
 
-        uint256 substrateLifeToRival = (_characterDetails[_myTokenId].attack * _characterDetails[_myTokenId].xp) - 
-        ((_characterDetails[_rivalTokenId].armor * _characterDetails[_rivalTokenId].xp) / 2);
-        uint256 substrateLifeToMe = (_characterDetails[_rivalTokenId].attack * _characterDetails[_rivalTokenId].xp) - 
-        ((_characterDetails[_myTokenId].armor * _characterDetails[_myTokenId].xp) / 2);
+        uint256 substrateLifeToRival = substrateLife(_myTokenId, _rivalTokenId);
+        uint256 substrateLifeToMe = substrateLife(_rivalTokenId, _myTokenId);
 
         if(substrateLifeToRival >= _characterDetails[_rivalTokenId].hp) {
             _characterDetails[_rivalTokenId].hp = 0;
@@ -115,18 +126,18 @@ contract NFTGameToken is ERC721, Ownable {
                 }
             }
         }
-        emit Fighted(_myTokenId, _rivalTokenId);
+        emit Fighted(_myTokenId, _rivalTokenId, substrateLifeToRival, substrateLifeToMe);
     }
 
     // Getters
-    function getTokenDetails(uint _tokenId) external view returns(Character memory) {
+    function getTokenDetails(uint256 _tokenId) external view returns(Character memory) {
         return _characterDetails[_tokenId];
     }
 
     function getMyCharacters() public view returns (Character[] memory){
         uint8 count = 0;
         Character[] memory myCharacters = new Character[](balanceOf(msg.sender));
-        for (uint i = 0; i < nextId; i++) {
+        for (uint256 i = 0; i < nextId; i++) {
             if (ownerOf(i) == msg.sender) {
                 myCharacters[count] = _characterDetails[i];
                 count++;
@@ -138,7 +149,7 @@ contract NFTGameToken is ERC721, Ownable {
     function getOthersCharacters() public view returns (Character[] memory){
         uint8 count = 0;
         Character[] memory othersCharacters = new Character[](nextId - balanceOf(msg.sender));
-        for (uint i = 0; i < nextId; i++) {
+        for (uint256 i = 0; i < nextId; i++) {
             if (ownerOf(i) != msg.sender) {
                 othersCharacters[count] = _characterDetails[i];
                 count++;
@@ -150,7 +161,7 @@ contract NFTGameToken is ERC721, Ownable {
     // only for TESTS getAllCharacters
     function getAllCharacters() public view returns (Character[] memory){
         Character[] memory allCharacters = new Character[](nextId);
-        for (uint i = 0; i < nextId; i++) {
+        for (uint256 i = 0; i < nextId; i++) {
             allCharacters[i] = _characterDetails[i];
         }
         return allCharacters;
