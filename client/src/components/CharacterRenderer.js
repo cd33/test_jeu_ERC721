@@ -1,5 +1,5 @@
 import React from "react";
-import { parts } from "./parts";
+import parts from "./parts";
 
 const CharacterRenderer = ({ character = null, size = 200, style }) => {
   if (!character) {
@@ -11,13 +11,12 @@ const CharacterRenderer = ({ character = null, size = 200, style }) => {
   while (dnaStr.length < 16) dnaStr = "0" + dnaStr;
 
   let characterDetails = {
-    bg: dnaStr.substring(0, 2) % 3,
+    bg: character.typeCharacter,
     hair: dnaStr.substring(2, 4) % 4,
     head: dnaStr.substring(4, 6) % 4,
     upbody: dnaStr.substring(6, 8) % 4,
     lowbody: dnaStr.substring(8, 10) % 4,
     shoes: dnaStr.substring(10, 12) % 4,
-    // addonMouth3: dnaStr.substring(12, 14) % 5,
   };
 
   const characterStyle = {

@@ -27,7 +27,7 @@ import f_2 from "../assets/foots/rainbow.png";
 import f_3 from "../assets/foots/red.png";
 import f_4 from "../assets/foots/white.png";
 
-export const parts = {
+const parts = {
   bg: [b_1, b_2, b_3],
   hair: [h_1, h_2, h_3, h_4],
   head: [he_1, he_2, he_3, he_4],
@@ -35,3 +35,5 @@ export const parts = {
   lowbody: [lb_1, lb_2, lb_3, lb_4],
   shoes: [f_1, f_2, f_3, f_4],
 };
+
+export default parts;

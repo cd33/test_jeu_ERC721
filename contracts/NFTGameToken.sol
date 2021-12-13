@@ -13,9 +13,9 @@ contract NFTGameToken is ERC721, Ownable {
 
     enum type_character { BERSERKER, SPIRITUAL, ELEMENTARY }
     uint256 nextId = 0;
-    uint256 mintFee = 1 ether;
-    uint256 healFee = 0.001 ether;
-    uint256 fightFee = 0.001 ether;
+    uint256 mintFee = 0.001 ether;
+    uint256 healFee = 0.00001 ether;
+    uint256 fightFee = 0.00001 ether;
 
     struct Character {
         uint256 id;
@@ -55,8 +55,8 @@ contract NFTGameToken is ERC721, Ownable {
     }
     
     function substrateLife(uint256 id1, uint256 id2) internal view returns(uint256) {
-        uint256 op1 = uint256(_characterDetails[id1].attack).mul(_characterDetails[id1].xp);
-        uint256 op2 = (uint256(_characterDetails[id2].armor).mul(_characterDetails[id2].xp)).div(2);
+        uint256 op1 = uint256(_characterDetails[id1].attack).mul(1 + _characterDetails[id1].xp.div(10));
+        uint256 op2 = (uint256(_characterDetails[id2].armor).mul(1 + _characterDetails[id2].xp.div(10))).div(2);
         if (op1 < op2) {
             return 0;
         } else {
@@ -87,7 +87,7 @@ contract NFTGameToken is ERC721, Ownable {
     function heal(uint256 _tokenId) external payable {
         require(msg.value == healFee, "Wrong amount of fees");
         require(ownerOf(_tokenId) == msg.sender, "You're not the owner of the NFT");
-        require(_characterDetails[_tokenId].hp > 0, "You're NFT is dead");
+        // require(_characterDetails[_tokenId].hp > 0, "You're NFT is dead");
         uint256 tempResult = _characterDetails[_tokenId].hp + 50;
         if (tempResult > 100) {
             _characterDetails[_tokenId].hp = 100;
@@ -158,12 +158,12 @@ contract NFTGameToken is ERC721, Ownable {
         return othersCharacters;
     }
     
-    // only for TESTS getAllCharacters
-    function getAllCharacters() public view returns (Character[] memory){
-        Character[] memory allCharacters = new Character[](nextId);
-        for (uint256 i = 0; i < nextId; i++) {
-            allCharacters[i] = _characterDetails[i];
-        }
-        return allCharacters;
-    }
+    // // only for TESTS getAllCharacters
+    // function getAllCharacters() public view returns (Character[] memory){
+    //     Character[] memory allCharacters = new Character[](nextId);
+    //     for (uint256 i = 0; i < nextId; i++) {
+    //         allCharacters[i] = _characterDetails[i];
+    //     }
+    //     return allCharacters;
+    // }
 }

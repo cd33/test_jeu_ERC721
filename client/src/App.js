@@ -96,7 +96,7 @@ const App = () => {
   const createCharacter = () => {
     setLoading(true);
     nftgContract.methods.createCharacter(typeCharacter)
-      .send({ from: accounts[0], value: web3.utils.toWei("1", 'Ether') })
+      .send({ from: accounts[0], value: web3.utils.toWei("0.001", 'Ether') })
       .once("error", err => {
         setLoading(false);
         console.log(err);
@@ -119,7 +119,7 @@ const App = () => {
   const fight = (_myTokenId, _rivalTokenId) => {
     setLoading(true);
     nftgContract.methods.fight(_myTokenId, _rivalTokenId)
-      .send({ from: accounts[0], value: web3.utils.toWei("0.001", 'Ether') })
+      .send({ from: accounts[0], value: web3.utils.toWei("0.00001", 'Ether') })
       .then(res => {
         setLoading(false);
         console.log(res);
@@ -129,7 +129,7 @@ const App = () => {
   const heal = (_myTokenId) => {
     setLoading(true);
     nftgContract.methods.heal(_myTokenId)
-      .send({ from: accounts[0], value: web3.utils.toWei("0.001", 'Ether') })
+      .send({ from: accounts[0], value: web3.utils.toWei("0.00001", 'Ether') })
       .then(res => {
         setLoading(false);
         console.log(res);
@@ -156,11 +156,10 @@ const App = () => {
     <s.Screen>
       <s.Container ai="center" style={{ flex: 1, backgroundColor: '#DBAD6A' }}>
         {!web3 ?
-          <><Modal modalShow={modalShow} setModalShow={setModalShow} title={titleModal} content={contentModal} />
-          <s.TextTitle>Loading Web3, accounts, and contract...</s.TextTitle></>
+          <><s.TextTitle>Loading Web3, accounts, and contract...</s.TextTitle>
+          <Modal modalShow={modalShow} setModalShow={setModalShow} title={titleModal} content={contentModal} /></>
           : <>
             <Navbar accounts={accounts} />
-            <Modal modalShow={modalShow} setModalShow={setModalShow} title={titleModal} content={contentModal} />
 
             <s.TextTitle>Début projet final Alyra</s.TextTitle>
             <s.TextSubTitle>Veuillez choisir un type de personnage</s.TextSubTitle>
@@ -182,35 +181,37 @@ const App = () => {
             </div>
 
             <s.TextTitle style={{ margin: 0 }}>Mes Persos</s.TextTitle>
-
+            <s.SpacerSmall />
             {!characters && <s.TextSubTitle>Créez votre premier NFT</s.TextSubTitle>}
 
-            <s.Container fd="row" style={{ flexWrap: "wrap" }}>
+            <s.Container fd="row" jc="center" style={{ flexWrap: "wrap" }}>
               {characters && characters.length > 0 &&
                 characters.map(character => {
                   return (
-                    <><s.Container key={character.id} style={{ minWidth: "130px" }}>
-                      <CharacterRenderer character={character} />
-                      <s.TextDescription>ID: {character.id}</s.TextDescription>
-                      {/* <s.TextDescription>DNA: {character.dna}</s.TextDescription> */}
-                      <s.TextDescription>XP: {character.xp}</s.TextDescription>
-                      <s.TextDescription>HP: {character.hp}</s.TextDescription>
-                      <s.TextDescription>Attack: {character.attack}</s.TextDescription>
-                      <s.TextDescription>Armor: {character.armor}</s.TextDescription>
-                      <s.TextDescription>Mana: {character.mana}</s.TextDescription>
-                      <s.TextDescription>Magic Resistance: {character.magicResistance}</s.TextDescription>
-                      <s.TextDescription>Type: {typeCharacterName(character.typeCharacter)}</s.TextDescription>
-                      {character.xp < 100 &&
-                        <s.Button
-                          disabled={loading ? 1 : 0}
-                          onClick={() => heal(character.id)}
-                          primary={loading ? "" : "primary"}
-                        >
-                          HEAL
-                        </s.Button>
-                      }
-                    </s.Container>
-                      <s.SpacerSmall /></>
+                    <div key={character.id}>
+                      <s.Container ai="center" style={{ minWidth: "200px", margin:10 }}>
+                        <CharacterRenderer character={character} />
+                        <s.TextDescription>ID: {character.id}</s.TextDescription>
+                        {/* <s.TextDescription>DNA: {character.dna}</s.TextDescription> */}
+                        <s.TextDescription>XP: {character.xp}</s.TextDescription>
+                        <s.TextDescription>HP: {character.hp}</s.TextDescription>
+                        <s.TextDescription>Attack: {character.attack}</s.TextDescription>
+                        <s.TextDescription>Armor: {character.armor}</s.TextDescription>
+                        <s.TextDescription>Mana: {character.mana}</s.TextDescription>
+                        <s.TextDescription>Magic Resistance: {character.magicResistance}</s.TextDescription>
+                        <s.TextDescription>Type: {typeCharacterName(character.typeCharacter)}</s.TextDescription>
+                        {character.xp < 100 &&
+                          <s.Button
+                            disabled={loading ? 1 : 0}
+                            onClick={() => heal(character.id)}
+                            primary={loading ? "" : "primary"}
+                          >
+                            HEAL
+                          </s.Button>
+                        }
+                      </s.Container>
+                      <s.SpacerSmall />
+                    </div>
                   )
                 })
               }
@@ -230,36 +231,40 @@ const App = () => {
                 </select></>
             }
 
-            <s.Container fd="row" style={{ flexWrap: "wrap" }}>
+            <s.Container fd="row" jc="center" style={{ flexWrap: "wrap" }}>
               {othersCharacters && othersCharacters.length > 0 &&
                 othersCharacters.map(character => {
                   return (
-                    <><s.Container key={character.dna} style={{ minWidth: "130px", paddingBottom: 20 }}>
-                      <s.TextDescription>ID: {character.id}</s.TextDescription>
-                      {/* <s.TextDescription>DNA: {character.dna}</s.TextDescription> */}
-                      <s.TextDescription>XP: {character.xp}</s.TextDescription>
-                      <s.TextDescription>HP: {character.hp}</s.TextDescription>
-                      <s.TextDescription>Attack: {character.attack}</s.TextDescription>
-                      <s.TextDescription>Armor: {character.armor}</s.TextDescription>
-                      <s.TextDescription>Mana: {character.mana}</s.TextDescription>
-                      <s.TextDescription>Magic Resistance: {character.magicResistance}</s.TextDescription>
-                      <s.TextDescription>Type: {typeCharacterName(character.typeCharacter)}</s.TextDescription>
+                    <div key={character.id}>
+                      <s.Container ai="center" style={{ minWidth: "200px", margin:10 }}>
+                        <CharacterRenderer character={character} />
+                        <s.TextDescription>ID: {character.id}</s.TextDescription>
+                        {/* <s.TextDescription>DNA: {character.dna}</s.TextDescription> */}
+                        <s.TextDescription>XP: {character.xp}</s.TextDescription>
+                        <s.TextDescription>HP: {character.hp}</s.TextDescription>
+                        <s.TextDescription>Attack: {character.attack}</s.TextDescription>
+                        <s.TextDescription>Armor: {character.armor}</s.TextDescription>
+                        <s.TextDescription>Mana: {character.mana}</s.TextDescription>
+                        <s.TextDescription>Magic Resistance: {character.magicResistance}</s.TextDescription>
+                        <s.TextDescription>Type: {typeCharacterName(character.typeCharacter)}</s.TextDescription>
 
-                      {characters && characters.length > 0 && selectedCharacter &&
-                        <s.Button
-                          disabled={loading ? 1 : 0}
-                          onClick={() => fight(selectedCharacter, character.id)}
-                          primary={loading ? "" : "primary"}
-                        >
-                          FIGHT
-                        </s.Button>
-                      }
-                    </s.Container>
-                      <s.SpacerSmall /></>
+                        {characters && characters.length > 0 && selectedCharacter &&
+                          <s.Button
+                            disabled={loading ? 1 : 0}
+                            onClick={() => fight(selectedCharacter, character.id)}
+                            primary={loading ? "" : "primary"}
+                          >
+                            FIGHT
+                          </s.Button>
+                        }
+                      </s.Container>
+                      <s.SpacerSmall />
+                    </div>
                   )
                 })
               }
             </s.Container>
+            <Modal modalShow={modalShow} setModalShow={setModalShow} title={titleModal} content={contentModal} />
           </>}
         {owner &&
           <s.Button
