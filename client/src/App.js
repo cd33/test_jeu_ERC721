@@ -87,8 +87,8 @@ const App = () => {
       .on('error', err => handleModal("Error", err.message))
 
       nftgContract.events.Fighted({fromBlock: 0})
-      .on('data', event => {console.log(event) ;handleModal("The Fight Took Place", `Your character #${event.returnValues.myTokenId} fought with #${event.returnValues.rivalTokenId}. 
-      You inflicted ${event.returnValues.substrateLifeToRival} hp and you suffered ${event.returnValues.substrateLifeToMe} hp.`)})
+      .on('data', event => handleModal("The Fight Took Place", `Your character #${event.returnValues.myTokenId} fought with #${event.returnValues.rivalTokenId}. 
+      You inflicted ${event.returnValues.substrateLifeToRival} hp and you suffered ${event.returnValues.substrateLifeToMe} hp.`))
       .on('error', err => handleModal("Error", err.message))
     }
   }, [accounts, nftgContract, web3])
@@ -97,13 +97,13 @@ const App = () => {
     setLoading(true);
     nftgContract.methods.createCharacter(typeCharacter)
       .send({ from: accounts[0], value: web3.utils.toWei("0.001", 'Ether') })
-      .once("error", err => {
-        setLoading(false);
-        console.log(err);
-      })
       .then(receipt => {
         setLoading(false);
         console.log(receipt);
+      })
+      .once("error", err => {
+        setLoading(false);
+        console.log(err);
       })
   }
 
@@ -113,6 +113,10 @@ const App = () => {
       .then(res => {
         setLoading(false);
         console.log(res);
+      })
+      .once("error", err => {
+        setLoading(false);
+        console.log(err);
       })
   }
 
@@ -124,6 +128,24 @@ const App = () => {
         setLoading(false);
         console.log(res);
       })
+      .once("error", err => {
+        setLoading(false);
+        console.log(err);
+      })
+  }
+
+  const spell = (_myTokenId, _rivalTokenId) => {
+    setLoading(true);
+    nftgContract.methods.spell(_myTokenId, _rivalTokenId)
+      .send({ from: accounts[0], value: web3.utils.toWei("0.00001", 'Ether') })
+      .then(res => {
+        setLoading(false);
+        console.log(res);
+      })
+      .once("error", err => {
+        setLoading(false);
+        console.log(err);
+      })
   }
 
   const heal = (_myTokenId) => {
@@ -134,15 +156,19 @@ const App = () => {
         setLoading(false);
         console.log(res);
       })
+      .once("error", err => {
+        setLoading(false);
+        console.log(err);
+      })
   }
 
   const typeCharacterName = (val) => {
     if (parseInt(val) === 0) {
-      return "BERSERKER"
+      return "BERSERKER";
     } else if (parseInt(val) === 1) {
-      return "SPIRITUAL"
+      return "SPIRITUAL";
     } else {
-      return "ELEMENTARY"
+      return "ELEMENTARY";
     }
   }
 
@@ -152,6 +178,15 @@ const App = () => {
     setModalShow(true);
   }
 
+  const handleSelectedCharacter = (e) => {
+    if (e === "") return null;
+    let tempArray = {id: null, mana: null};
+    let character = JSON.parse(e);
+    tempArray.id = character.id;
+    tempArray.mana = character.mana;
+    setSelectedCharacter(tempArray);
+  }
+  
   return (
     <s.Screen>
       <s.Container ai="center" style={{ flex: 1, backgroundColor: '#DBAD6A' }}>
@@ -195,12 +230,13 @@ const App = () => {
                         {/* <s.TextDescription>DNA: {character.dna}</s.TextDescription> */}
                         <s.TextDescription>XP: {character.xp}</s.TextDescription>
                         <s.TextDescription>HP: {character.hp}</s.TextDescription>
+                        <s.TextDescription>Mana: {character.mana}</s.TextDescription>
                         <s.TextDescription>Attack: {character.attack}</s.TextDescription>
                         <s.TextDescription>Armor: {character.armor}</s.TextDescription>
-                        <s.TextDescription>Mana: {character.mana}</s.TextDescription>
+                        <s.TextDescription>Magic Attack: {character.magicAttack}</s.TextDescription>
                         <s.TextDescription>Magic Resistance: {character.magicResistance}</s.TextDescription>
                         <s.TextDescription>Type: {typeCharacterName(character.typeCharacter)}</s.TextDescription>
-                        {character.xp < 100 &&
+                        {character.hp < 100 &&
                           <s.Button
                             disabled={loading ? 1 : 0}
                             onClick={() => heal(character.id)}
@@ -222,10 +258,10 @@ const App = () => {
 
             {characters && characters.length > 0 &&
               <><s.TextSubTitle>Veuillez choisir un personnage pour combattre</s.TextSubTitle>
-                <select onChange={e => setSelectedCharacter(e.target.value)}>
+                <select onChange={e => handleSelectedCharacter(e.target.value)}>
                   <option value="">--Please choose an option--</option>
                   {characters.map(character => (
-                    <option key={character.id} value={character.id}>ID #{character.id}</option>
+                    <option key={character.id} value={`{"id":${character.id},"mana":${character.mana}}`}>ID #{character.id}</option>
                   ))
                   }
                 </select></>
@@ -242,20 +278,33 @@ const App = () => {
                         {/* <s.TextDescription>DNA: {character.dna}</s.TextDescription> */}
                         <s.TextDescription>XP: {character.xp}</s.TextDescription>
                         <s.TextDescription>HP: {character.hp}</s.TextDescription>
+                        <s.TextDescription>Mana: {character.mana}</s.TextDescription>
                         <s.TextDescription>Attack: {character.attack}</s.TextDescription>
                         <s.TextDescription>Armor: {character.armor}</s.TextDescription>
-                        <s.TextDescription>Mana: {character.mana}</s.TextDescription>
+                        <s.TextDescription>Magic Attack: {character.magicAttack}</s.TextDescription>
                         <s.TextDescription>Magic Resistance: {character.magicResistance}</s.TextDescription>
                         <s.TextDescription>Type: {typeCharacterName(character.typeCharacter)}</s.TextDescription>
 
                         {characters && characters.length > 0 && selectedCharacter &&
-                          <s.Button
-                            disabled={loading ? 1 : 0}
-                            onClick={() => fight(selectedCharacter, character.id)}
-                            primary={loading ? "" : "primary"}
-                          >
-                            FIGHT
-                          </s.Button>
+                          <s.Container fd="row" jc="center">
+                            <s.Button
+                              disabled={loading ? 1 : 0}
+                              onClick={() => fight(selectedCharacter.id, character.id)}
+                              primary={loading ? "" : "primary"}
+                            >
+                              FIGHT
+                            </s.Button>
+                          
+                            { selectedCharacter.mana >= 10 &&
+                              <s.Button
+                                disabled={loading ? 1 : 0}
+                                onClick={() => spell(selectedCharacter.id, character.id)}
+                                primary={loading ? "" : "primary"}
+                              >
+                                SPELL
+                              </s.Button>
+                            }
+                          </s.Container>
                         }
                       </s.Container>
                       <s.SpacerSmall />
