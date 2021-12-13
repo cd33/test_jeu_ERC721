@@ -83,40 +83,47 @@ const App = () => {
       .on('error', err => handleModal("Error", err.message))
 
       nftgContract.events.Healed({fromBlock: 0})
-      .on('data', event => handleModal("Your Character Is Healed", `Your character #${event.returnValues.tokenId} was healed of 50 points`))
+      .on('data', event => {getUpdateCharacters();
+        handleModal("Your Character Is Healed", `Your character #${event.returnValues.tokenId} was healed of 50 points`)})
       .on('error', err => handleModal("Error", err.message))
 
       nftgContract.events.Fighted({fromBlock: 0})
-      .on('data', event => handleModal("The Fight Took Place", `Your character #${event.returnValues.myTokenId} fought with #${event.returnValues.rivalTokenId}. 
-      You inflicted ${event.returnValues.substrateLifeToRival} hp and you suffered ${event.returnValues.substrateLifeToMe} hp.`))
+      .on('data', event => {getUpdateCharacters();
+        handleModal("The Fight Took Place", `Your character #${event.returnValues.myTokenId} fought with #${event.returnValues.rivalTokenId}. 
+        You inflicted ${event.returnValues.substrateLifeToRival} hp and you suffered ${event.returnValues.substrateLifeToMe} hp.`)})
       .on('error', err => handleModal("Error", err.message))
     }
   }, [accounts, nftgContract, web3])
-  
+
+  const getUpdateCharacters = async () => {
+    await nftgContract.methods.getMyCharacters().call({ from: accounts[0] }).then(res => setCharacters(res));
+    await nftgContract.methods.getOthersCharacters().call({ from: accounts[0] }).then(res => setOthersCharacters(res));
+  }
+    
   const createCharacter = () => {
     setLoading(true);
     nftgContract.methods.createCharacter(typeCharacter)
       .send({ from: accounts[0], value: web3.utils.toWei("0.001", 'Ether') })
-      .then(receipt => {
-        setLoading(false);
-        console.log(receipt);
-      })
       .once("error", err => {
         setLoading(false);
         console.log(err);
+      })
+      .then(receipt => {
+        setLoading(false);
+        console.log(receipt);
       })
   }
 
   const withdraw = () => {
     setLoading(true);
     nftgContract.methods.withdraw().send({ from: accounts[0] })
-      .then(res => {
-        setLoading(false);
-        console.log(res);
-      })
       .once("error", err => {
         setLoading(false);
         console.log(err);
+      })
+      .then(res => {
+        setLoading(false);
+        console.log(res);
       })
   }
 
@@ -124,13 +131,13 @@ const App = () => {
     setLoading(true);
     nftgContract.methods.fight(_myTokenId, _rivalTokenId)
       .send({ from: accounts[0], value: web3.utils.toWei("0.00001", 'Ether') })
-      .then(res => {
-        setLoading(false);
-        console.log(res);
-      })
       .once("error", err => {
         setLoading(false);
         console.log(err);
+      })
+      .then(res => {
+        setLoading(false);
+        console.log(res);
       })
   }
 
@@ -138,13 +145,13 @@ const App = () => {
     setLoading(true);
     nftgContract.methods.spell(_myTokenId, _rivalTokenId)
       .send({ from: accounts[0], value: web3.utils.toWei("0.00001", 'Ether') })
-      .then(res => {
-        setLoading(false);
-        console.log(res);
-      })
       .once("error", err => {
         setLoading(false);
         console.log(err);
+      })
+      .then(res => {
+        setLoading(false);
+        console.log(res);
       })
   }
 

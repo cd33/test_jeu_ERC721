@@ -42,7 +42,7 @@ contract NFTGameToken is ERC721, Ownable {
     // Helper
     function _generateRandomNum(uint256 _mod) internal view returns(uint256) {
         uint256 randNum = uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender)));
-        return randNum % _mod;
+        return randNum.mod(_mod);
     }
     
     function updateFees(uint256 _mintFee, uint256 _healFee, uint256 _fightFee) external onlyOwner() {
@@ -56,8 +56,8 @@ contract NFTGameToken is ERC721, Ownable {
     }
     
     function substrateLife(uint256 id1, uint256 id2) internal view returns(uint256) {
-        uint256 op1 = _characterDetails[id1].attack.mul(1 + _characterDetails[id1].xp.div(10));
-        uint256 op2 = _characterDetails[id2].armor.mul(1 + _characterDetails[id2].xp.div(10)).div(2);
+        uint256 op1 = (_characterDetails[id1].attack).mul((1 + _characterDetails[id1].xp));
+        uint256 op2 = (_characterDetails[id2].armor).mul(((1 + _characterDetails[id2].xp).div(2)));
         if (op1 < op2) {
             return 0;
         } else {
@@ -66,8 +66,8 @@ contract NFTGameToken is ERC721, Ownable {
     }
 
     function substrateLifeMagic(uint256 id1, uint256 id2) internal view returns(uint256) {
-        uint256 op1 = _characterDetails[id1].magicAttack.mul(1 + _characterDetails[id1].xp.div(10));
-        uint256 op2 = _characterDetails[id2].magicResistance.mul(1 + _characterDetails[id2].xp.div(10)).div(2);
+        uint256 op1 = (_characterDetails[id1].magicAttack).mul((1 + _characterDetails[id1].xp));
+        uint256 op2 = (_characterDetails[id2].magicResistance).mul(((1 + _characterDetails[id2].xp).div(2)));
         if (op1 < op2) {
             return 0;
         } else {
@@ -100,11 +100,11 @@ contract NFTGameToken is ERC721, Ownable {
         require(ownerOf(_tokenId) == msg.sender, "You're not the owner of the NFT");
         require(_characterDetails[_tokenId].hp < 100, "You're character is already healed");
         // require(_characterDetails[_tokenId].hp > 0, "You're NFT is dead");
-        uint256 tempResult = _characterDetails[_tokenId].hp + 50;
+        uint256 tempResult = (_characterDetails[_tokenId].hp).add(50);
         if (tempResult > 100) {
             _characterDetails[_tokenId].hp = 100;
         } else {
-            _characterDetails[_tokenId].hp.add(50);
+            _characterDetails[_tokenId].hp = (_characterDetails[_tokenId].hp).add(50);
         }
         emit Healed(_tokenId);
     }
@@ -122,12 +122,12 @@ contract NFTGameToken is ERC721, Ownable {
             _characterDetails[_rivalTokenId].hp = 0;
             _characterDetails[_myTokenId].xp++;
         } else {
-            _characterDetails[_rivalTokenId].hp.sub(substrateLifeToRival);
+            _characterDetails[_rivalTokenId].hp = (_characterDetails[_rivalTokenId].hp).sub(substrateLifeToRival);
             if(substrateLifeToMe >= _characterDetails[_myTokenId].hp) {
                 _characterDetails[_myTokenId].hp = 0;
                 _characterDetails[_rivalTokenId].xp++;
             } else {
-                _characterDetails[_myTokenId].hp.sub(substrateLifeToMe);
+                _characterDetails[_myTokenId].hp = (_characterDetails[_myTokenId].hp).sub(substrateLifeToMe);
                 if (substrateLifeToRival > substrateLifeToMe) {
                     _characterDetails[_myTokenId].xp++;
                 } else if (substrateLifeToMe > substrateLifeToRival) {
@@ -151,17 +151,17 @@ contract NFTGameToken is ERC721, Ownable {
         uint256 substrateLifeToRival = substrateLifeMagic(_myTokenId, _rivalTokenId);
         uint256 substrateLifeToMe = substrateLifeMagic(_rivalTokenId, _myTokenId);
 
-        _characterDetails[_myTokenId].mana.sub(10);
+        _characterDetails[_myTokenId].mana = (_characterDetails[_myTokenId].mana).sub(10);
         if(substrateLifeToRival >= _characterDetails[_rivalTokenId].hp) {
             _characterDetails[_rivalTokenId].hp = 0;
             _characterDetails[_myTokenId].xp++;
         } else {
-            _characterDetails[_rivalTokenId].hp.sub(substrateLifeToRival);
+            _characterDetails[_rivalTokenId].hp = (_characterDetails[_rivalTokenId].hp).sub(substrateLifeToRival);
             if(substrateLifeToMe >= _characterDetails[_myTokenId].hp) {
                 _characterDetails[_myTokenId].hp = 0;
                 _characterDetails[_rivalTokenId].xp++;
             } else {
-                _characterDetails[_myTokenId].hp.sub(substrateLifeToMe);
+                _characterDetails[_myTokenId].hp = (_characterDetails[_myTokenId].hp).sub(substrateLifeToMe);
                 if (substrateLifeToRival > substrateLifeToMe) {
                     _characterDetails[_myTokenId].xp++;
                 } else if (substrateLifeToMe > substrateLifeToRival) {
@@ -180,7 +180,7 @@ contract NFTGameToken is ERC721, Ownable {
         return _characterDetails[_tokenId];
     }
 
-    function getMyCharacters() public view returns (Character[] memory){
+    function getMyCharacters() external view returns (Character[] memory){
         uint8 count = 0;
         Character[] memory myCharacters = new Character[](balanceOf(msg.sender));
         for (uint256 i = 0; i < nextId; i++) {
@@ -192,9 +192,9 @@ contract NFTGameToken is ERC721, Ownable {
         return myCharacters;
     }
 
-    function getOthersCharacters() public view returns (Character[] memory){
+    function getOthersCharacters() external view returns (Character[] memory){
         uint256 count = 0;
-        Character[] memory othersCharacters = new Character[](nextId - balanceOf(msg.sender));
+        Character[] memory othersCharacters = new Character[](nextId.sub(balanceOf(msg.sender)));
         for (uint256 i = 0; i < nextId; i++) {
             if (ownerOf(i) != msg.sender) {
                 othersCharacters[count] = _characterDetails[i];
@@ -205,7 +205,7 @@ contract NFTGameToken is ERC721, Ownable {
     }
     
     // // only for TESTS getAllCharacters
-    // function getAllCharacters() public view returns (Character[] memory){
+    // function getAllCharacters() external view returns (Character[] memory){
     //     Character[] memory allCharacters = new Character[](nextId);
     //     for (uint256 i = 0; i < nextId; i++) {
     //         allCharacters[i] = _characterDetails[i];
